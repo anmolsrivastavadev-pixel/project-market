@@ -1,6 +1,46 @@
+function publicURL(value,base) {
+ const u=new URL(value,base),host=u.hostname.toLowerCase();
+ if(!['http:','https:'].includes(u.protocol)||u.username||u.password||host==='localhost'||host.endsWith('.local')||host.endsWith('.internal')||!host.includes('.')||/^\d+\.\d+\.\d+\.\d+$/.test(host)||host.includes(':'))throw Error('Invalid public URL');
+ return u;
+}
+async function publicFetch(value){
+ let url=publicURL(value);
+ for(let i=0;i<4;i++){
+  const r=await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(6000),headers:{'user-agent':'ProjectMarket/1.0 (website icon preview)'}});
+  if(r.status>=300&&r.status<400&&r.headers.get('location')){url=publicURL(r.headers.get('location'),url);continue}
+  if(!r.ok)throw Error('Not found');return {response:r,url:url.href};
+ }
+ throw Error('Too many redirects');
+}
+async function projectLogo(id,env){
+ if(!/^[a-f0-9]{64}$/.test(id))return new Response('Not found',{status:404});
+ const record=await env.BUCKET.head('projects/'+id);if(!record)return new Response('Not found',{status:404});
+ const key='logos/'+id;const cached=await env.BUCKET.get(key);
+ if(cached)return new Response(cached.body,{headers:{'content-type':cached.httpMetadata.contentType,'cache-control':'public, max-age=86400','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox"}});
+ const project=JSON.parse(record.customMetadata.project);let candidates=[];
+ try{
+  const {response,url}=await publicFetch(project.url);const html=(await response.text()).slice(0,200000);
+  for(const tag of html.match(/<link\b[^>]*>/gi)||[]){
+   const rel=tag.match(/\brel\s*=\s*["']([^"']+)["']/i)?.[1]||'';
+   const href=tag.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
+   if(href&&/(?:^|\s)(?:icon|apple-touch-icon)(?:\s|$)/i.test(rel))candidates.push(publicURL(href.replace(/&amp;/g,'&'),url).href);
+  }
+ }catch{}
+ candidates.push(new URL('favicon.ico',project.url).href,new URL('/favicon.ico',project.url).href);
+ for(const candidate of [...new Set(candidates)]){try{
+  const {response}=await publicFetch(candidate);const type=(response.headers.get('content-type')||'').split(';')[0];
+  if(!/^image\/(png|jpeg|gif|webp|svg\+xml|x-icon|vnd.microsoft.icon|avif)$/.test(type))continue;
+  if(Number(response.headers.get('content-length'))>524288)continue;
+  const body=await response.arrayBuffer();if(body.byteLength>524288)continue;
+  await env.BUCKET.put(key,body,{httpMetadata:{contentType:type}});
+  return new Response(body,{headers:{'content-type':type,'cache-control':'public, max-age=86400','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; sandbox"}});
+ }catch{}}
+ return new Response('No logo found',{status:404});
+}
 const json = (data,status=200) => new Response(JSON.stringify(data), {status,headers:{'content-type':'application/json','cache-control':'no-store'}});
 export async function api(request,env) {
  const url=new URL(request.url);
+ if(url.pathname.startsWith('/api/logo/')&&request.method==='GET')return projectLogo(url.pathname.split('/').pop(),env);
  if(url.pathname!='/api/projects') return json({error:'Not found'},404);
  if(!env.BUCKET) return json({error:'Project storage is unavailable. Please try again shortly.'},503);
  if(request.method==='GET') {

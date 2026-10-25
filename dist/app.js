@@ -11,12 +11,11 @@
   }
   dialog.addEventListener('click', e => {if(e.target === dialog) dialog.close()});
   document.querySelectorAll('[data-demo-auth]').forEach(a => a.addEventListener('click',e => {
-    e.preventDefault();show('<h2>Preview account</h2><p>This is a standalone copy of Proof of Traction. Account sign-in and analytics are not connected in this preview.</p><button class="btn dark" id="dismiss-account">Got it</button>');
+    e.preventDefault();show('<h2>Preview account</h2><p>Your market is getting started. Account sign-in and analytics are not connected in this preview.</p><button class="btn dark" id="dismiss-account">Got it</button>');
     document.getElementById('dismiss-account').onclick=()=>dialog.close();
   }));
   document.querySelectorAll('[data-demo-submit]').forEach(a => a.addEventListener('click',e=>{
-    e.preventDefault();show('<h2>Submit a project</h2><p>Save a project draft in this browser. This preview does not submit to the original website.</p><form><label>Project name<input name="name" required maxlength="80" placeholder="Your project"></label><label>Website URL<input name="url" type="url" required placeholder="https://example.com"></label><label>Short description<input name="description" required maxlength="180" placeholder="What are you building?"></label><button class="btn dark" type="submit">Save draft</button></form>');
+    e.preventDefault();show('<h2>Submit a project</h2><p>Save a project draft in this browser. You can publish it once submissions are connected.</p><form><label>Project name<input name="name" required maxlength="80" placeholder="Your project"></label><label>Website URL<input name="url" type="url" required placeholder="https://example.com"></label><label>Short description<input name="description" required maxlength="180" placeholder="What are you building?"></label><button class="btn dark" type="submit">Save draft</button></form>');
     dialog.querySelector('form').onsubmit=ev=>{ev.preventDefault();const data=Object.fromEntries(new FormData(ev.target));try{localStorage.setItem('traction-project-draft',JSON.stringify(data));show('<h2>Draft saved</h2><p>Your project draft is saved in this browser. Publishing and traffic measurement require a connected backend.</p>')}catch{show('<h2>Storage unavailable</h2><p>Your browser could not save the draft. Please enable local storage and try again.</p>')}};
   }));
-  document.querySelectorAll('.mk-countdown').forEach(el=>{el.textContent='Snapshot · 25 Oct 2026';});
 })();

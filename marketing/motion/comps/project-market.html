@@ -1,0 +1,219 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Project Market — launch spot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=IBM+Plex+Mono:wght@400;500&family=Nanum+Pen+Script&display=block">
+<style>
+  :root {
+    --paper: #F1F0F5; --paper-2: #FBFBFE; --lav: #ECEAFB; --ink: #111827; --ink-soft: #5B6070;
+    --indigo: #4F46E5; --red: #C8412A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: var(--W); height: var(--H); overflow: hidden; background: var(--paper); }
+  body { font-kerning: normal; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: var(--ink); }
+  #cam { position: absolute; inset: 0; transform-origin: 45% 50%; }
+  .sheet { position: absolute; inset: 0; }
+  .sheet::before { content: ''; position: absolute; inset: calc(var(--u) * -4); background: inherit; z-index: -1; }
+  #sheet1 { background: var(--paper); z-index: 2; transform-origin: 0% 100%; }
+  #sheet2 { background: var(--ink); color: var(--paper); z-index: 1; }
+  svg.ink { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  svg.ink path { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+
+  .display { font-family: 'Bricolage Grotesque', sans-serif; font-variation-settings: 'opsz' 96; font-weight: 720; letter-spacing: -0.035em; line-height: 0.95; color: var(--ink); }
+  .display em { font-style: normal; color: var(--indigo); }
+  .line { display: block; }
+  .hand { font-family: 'Nanum Pen Script', cursive; color: var(--red); line-height: 1; white-space: nowrap; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-feature-settings: 'zero' 1; }
+
+  #groupA { position: absolute; inset: 0; }
+  .hl { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 29); font-size: calc(var(--u) * 14); }
+  #hl2 { font-size: calc(var(--u) * 12.5); top: calc(var(--u) * 24); }
+  #crickets { position: absolute; font-size: calc(var(--u) * 8.5); }
+
+  .card { position: absolute; right: calc(var(--u) * 9); top: calc(var(--u) * 19); width: calc(var(--u) * 76);
+    background: var(--paper-2); border: 1px solid rgba(17,24,39,.12); border-radius: calc(var(--u) * 1);
+    padding: calc(var(--u) * 3.6) calc(var(--u) * 4) calc(var(--u) * 3.8); color: var(--ink); transform-origin: 30% 80%; }
+  .card .row { display: flex; justify-content: space-between; align-items: center; }
+  .k { font-size: calc(var(--u) * 2.3); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); }
+  .k.on { color: var(--paper-2); background: var(--ink); border-radius: 99px; padding: calc(var(--u) * .5) calc(var(--u) * 1.6); letter-spacing: .08em; }
+  .inner { background: var(--lav); border: 1px solid #DCD9F5; border-radius: calc(var(--u) * .8); padding: calc(var(--u) * 3.2) calc(var(--u) * 3.4); margin-top: calc(var(--u) * 3); }
+  .proj { display: flex; align-items: center; gap: calc(var(--u) * 2.2); }
+  .logo { width: calc(var(--u) * 8.6); height: calc(var(--u) * 8.6); flex: none; }
+  .pname { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: calc(var(--u) * 6.2); letter-spacing: -.03em; text-decoration: underline; text-decoration-thickness: .06em; text-underline-offset: .12em; }
+  .pdesc { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 400; font-size: calc(var(--u) * 3.5); color: var(--ink-soft); margin-top: calc(var(--u) * 2.6); }
+  .purl { font-size: calc(var(--u) * 2.4); color: var(--indigo); margin-top: calc(var(--u) * 1.6); }
+  .foot { margin-top: calc(var(--u) * 2.8); }
+  .new { font-size: calc(var(--u) * 2.5); color: var(--indigo); border: 1.5px solid currentColor; border-radius: 99px; padding: calc(var(--u) * .4) calc(var(--u) * 1.5); }
+  .stamp { position: absolute; right: calc(var(--u) * 13); bottom: calc(var(--u) * 1.6); font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
+    font-size: calc(var(--u) * 7.4); letter-spacing: .06em; color: var(--indigo); border: calc(var(--u) * .55) solid var(--indigo); border-radius: calc(var(--u) * 1.2);
+    padding: calc(var(--u) * .1) calc(var(--u) * 1.8) 0; mix-blend-mode: multiply; opacity: 0; -webkit-mask-size: calc(var(--u) * 24); }
+
+  #note { position: absolute; left: calc(var(--u) * 10); top: calc(var(--u) * 66); font-size: calc(var(--u) * 6.6); color: var(--indigo); }
+
+  .end { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 26); }
+  .brand { display: flex; align-items: center; gap: calc(var(--u) * 3); }
+  .mark { width: calc(var(--u) * 14); height: calc(var(--u) * 14); flex: none; }
+  .wordmark { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 760; font-variation-settings: 'opsz' 96; font-size: calc(var(--u) * 12.5); letter-spacing: -.045em; line-height: 1; }
+  .tag { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 340; font-size: calc(var(--u) * 6.4); letter-spacing: -.02em; margin-top: calc(var(--u) * 4); opacity: .9; }
+  .url { font-size: calc(var(--u) * 3.6); margin-top: calc(var(--u) * 6.5); display: inline-block; letter-spacing: .01em; color: #C7D2FE; }
+
+  .fmt-square .hl, .fmt-tall .hl { top: calc(var(--u) * 9); left: calc(var(--u) * 8); font-size: calc(var(--u) * 11.5); }
+  .fmt-square #hl1 { top: calc(var(--u) * 30); } .fmt-tall #hl1 { top: calc(var(--u) * 44); }
+  .fmt-square #hl2, .fmt-tall #hl2 { font-size: calc(var(--u) * 10.5); }
+  .fmt-tall #hl2 { top: calc(var(--u) * 14); }
+  .fmt-square .card, .fmt-tall .card { top: auto; bottom: calc(var(--u) * 17); right: calc(var(--u) * 7); width: calc(var(--u) * 78); }
+  .fmt-tall .card { bottom: calc(var(--u) * 30); }
+  .fmt-square #note, .fmt-tall #note { left: calc(var(--u) * 8); top: auto; bottom: calc(var(--u) * 6); font-size: calc(var(--u) * 6); }
+  .fmt-tall #note { bottom: calc(var(--u) * 15); }
+  .fmt-square .end, .fmt-tall .end { left: calc(var(--u) * 8); top: calc(var(--u) * 28); }
+  .fmt-tall .end { top: calc(var(--u) * 46); }
+  .fmt-square .wordmark, .fmt-tall .wordmark { font-size: calc(var(--u) * 11); }
+  .fmt-square .mark, .fmt-tall .mark { width: calc(var(--u) * 12); height: calc(var(--u) * 12); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="cam">
+    <div class="sheet" id="sheet2">
+      <div class="end">
+        <div class="brand">
+          <svg class="mark" id="mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path fill="#fff" fill-rule="evenodd" transform="translate(16 16) scale(0.78) translate(-16 -16)" d="M1.5 20.5h4V29h-4zM7 14h4v15H7zM12.5 3H22C27.5 3 30.5 6 30.5 11.5C30.5 17 27.5 20 22 20H19V29H12.5zM19 7.8V15.2H22C24.4 15.2 25.8 13.9 25.8 11.5C25.8 9.1 24.4 7.8 22 7.8z"/></svg>
+          <div class="wordmark" data-text="wordmark">Project Market</div>
+        </div>
+        <div class="tag" data-text="tagline">Launch it. Get found.</div>
+        <div class="url mono" id="url" data-text="url">project-market-app.netlify.app</div>
+      </div>
+      <svg class="ink" id="inkEnd"></svg>
+    </div>
+    <div class="sheet" id="sheet1">
+      <div id="groupA">
+        <h1 class="hl display" id="hl1" data-text="hook"><span class="line">You shipped it.</span><span class="line"><span id="nobody">Nobody</span> saw it.</span></h1>
+        <div class="hand" id="crickets" data-text="crickets">(crickets)</div>
+        <svg class="ink" id="inkA"></svg>
+      </div>
+      <h1 class="hl display" id="hl2" data-text="promise"><span class="line">Put it on</span><span class="line"><em>the market.</em></span></h1>
+      <div class="card" id="card">
+        <div class="row mono"><span class="k">Market index</span><span class="k on">This week</span></div>
+        <div class="inner">
+          <div class="proj">
+            <svg class="logo" id="plogo" viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#1A1C22"/>
+              <path d="M10 27c3-1 5-4 5-8" stroke="#2BA59E" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+              <path d="M17 29c4-2 7-7 6-14" stroke="#F2B632" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+              <path d="M24 30c5-3 8-10 6-19" stroke="#E8572A" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>
+            <div class="pname" data-text="pname">upcurrent</div>
+          </div>
+          <div class="pdesc" data-text="pdesc">I track AI so you don't have to.</div>
+          <div class="purl mono">anmolsrivastavadev-pixel.github.io ↗</div>
+        </div>
+        <div class="row foot mono"><span class="k">1 project listed</span><span class="new">New</span></div>
+        <div class="stamp" id="stamp">LISTED</div>
+      </div>
+      <div class="hand" id="note" data-text="note">logo pulled from your site</div>
+      <svg class="ink" id="inkB"></svg>
+    </div>
+  </div>
+</div>
+<script src="../runtime/hand.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const u = H.u, S = {};
+
+function inkMask(seed) {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d'), r = H.rng(seed);
+  x.fillStyle = '#000'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(0,0,0,${r() * 0.9})`; x.clearRect(r() * 256, r() * 256, 1 + r() * 2.5, 1 + r() * 2.5); }
+  for (let i = 0; i < 14; i++) { x.globalAlpha = 0.5; x.clearRect(r() * 256, r() * 256, 8 + r() * 30, 1 + r() * 2); }
+  return c.toDataURL();
+}
+
+H.compose({
+  duration: 13,
+  grain: 60, grainOpacity: 0.5, paperOpacity: 0.5,
+  setup() {
+    const st = $('#stage').getBoundingClientRect();
+    const rel = (el) => { const r = el.getBoundingClientRect(); return { x: r.x - st.x, y: r.y - st.y, w: r.width, h: r.height }; };
+    const mk = (svg, d, color, width) => { const p = H.svg('path', { d, 'stroke-width': width * u, filter: 'url(#ink)' }, $(svg)); p.style.stroke = color; return p; };
+
+    const nb = rel($('#nobody'));
+    S.circle = mk('#inkA', H.scribbleCircle(nb.x + nb.w * 0.5, nb.y + nb.h * 0.58, nb.w * 0.5 + u * 1.6, nb.h * 0.4, { seed: 'nobody' }), 'var(--red)', 0.62);
+    const l2 = rel(document.querySelectorAll('#hl1 .line')[1]);
+    $('#crickets').style.left = (H.format === 'wide' ? l2.x + l2.w + u * 3.5 : l2.x + u * 1) + 'px';
+    $('#crickets').style.top = (H.format === 'wide' ? l2.y + l2.h * 0.3 : l2.y + l2.h + u * 2.5) + 'px';
+    const lines = [...document.querySelectorAll('#hl1 .line')].map(rel);
+    S.strike = lines.map((L, i) => mk('#inkA', H.line([L.x - u * 1.2, L.y + L.h * 0.56 + u * 0.3], [L.x + L.w + u * 1.6, L.y + L.h * 0.5 - u * 0.5], { seed: 's' + i, bow: 0.5 }), 'var(--ink)', 0.75));
+
+    const note = rel($('#note')), logo = rel($('#plogo'));
+    const from = H.format === 'wide' ? [note.x + note.w + u * 2, note.y + note.h * 0.4] : [note.x + note.w + u * 2, note.y + note.h * 0.45];
+    const to = H.format === 'wide' ? [logo.x - u * 1.2, logo.y + logo.h + u * 1.2] : [logo.x + logo.w * 0.3, logo.y + logo.h + u * 1.2];
+    const a = H.arrow(from, to, { seed: 'note', bend: H.format === 'wide' ? 0.22 : 0.32 });
+    S.arrow = [mk('#inkB', a.shaft, 'var(--indigo)', 0.5), mk('#inkB', a.head1, 'var(--indigo)', 0.5), mk('#inkB', a.head2, 'var(--indigo)', 0.5)];
+
+    const url = rel($('#url'));
+    S.under = mk('#inkEnd', H.line([url.x - u * 0.6, url.y + url.h + u * 0.9], [url.x + url.w + u * 1.4, url.y + url.h + u * 0.5], { seed: 'u', bow: 0.4 }), '#A5B4FC', 0.55);
+
+    $('#stamp').style.webkitMaskImage = `url(${inkMask('stamp')})`;
+    H.split($('#hl2')); H.split($('.tag'));
+  },
+
+  scene(t) {
+    const push = H.lerp(1.0, 1.035, H.anim('push', t, 0, 9, 'glide', { kind: 'camera' }));
+    const hit = H.impact(t, 7.12, { amp: 0.55 });
+    $('#cam').style.transform = `${H.handheld(t)} translate(${hit.x}px,${hit.y}px) scale(${push})`;
+
+    /* A — hook, composed on frame 0 */
+    H.draw(S.circle, H.anim('circle', t, 0.35, 0.55, 'ink', { kind: 'draw' }));
+    H.boil(S.circle, t);
+    H.write($('#crickets'), H.anim('crickets', t, 1.0, 0.45, 'snap', { kind: 'write' })); H.boil($('#crickets'), t, 3);
+    H.draw(S.strike[0], H.anim('strike1', t, 2.45, 0.22, 'ink', { kind: 'draw' }));
+    H.draw(S.strike[1], H.anim('strike2', t, 2.64, 0.2, 'ink', { kind: 'draw' }));
+    S.strike.forEach((s) => H.boil(s, t));
+    const outA = H.anim('outA', t, 3.0, 0.3, 'exit', { kind: 'exit', from: 'up' });
+    $('#groupA').style.transform = `translateY(${-outA * 6 * u}px) rotate(${-outA * 1.5}deg)`;
+    $('#groupA').style.opacity = 1 - outA;
+
+    /* B — the answer, set letter by letter */
+    $('#hl2').style.visibility = t >= 3.15 ? 'visible' : 'hidden';
+    H.typeIn('promise', $('#hl2'), t, 3.15, { stagger: 0.032 });
+
+    /* C — the project card lands like paper */
+    const cp = H.springAnim('card', t, 4.5, { k: 120, c: 13 }, { kind: 'enter', from: 'lower-right' });
+    const card = $('#card');
+    card.style.opacity = H.clamp((t - 4.5) / 0.1);
+    card.style.transform = `translate(${(1 - cp) * 34 * u}px, ${(1 - cp) * 22 * u}px) rotate(${H.lerp(9, -1.3, cp)}deg)`;
+    const air = H.clamp(1 - cp, 0, 1);
+    card.style.boxShadow = `0 ${u * (0.3 + air * 3)}px ${u * (0.6 + air * 5)}px rgba(17,24,39,${0.08 + air * 0.08}), 0 ${u * (2 + air * 6)}px ${u * (5 + air * 9)}px rgba(17,24,39,${0.07 + air * 0.05})`;
+
+    /* logo pops in after the card settles: pulled from the site */
+    const lp = H.springAnim('logo', t, 5.25, { k: 260, c: 16 }, { kind: 'enter', from: 'center' });
+    $('#plogo').style.transform = `scale(${H.lerp(0.6, 1, lp)}) rotate(${H.lerp(-12, 0, H.clamp(lp))}deg)`;
+    $('#plogo').style.opacity = H.clamp((t - 5.25) / 0.08);
+
+    /* note + arrow in the margin */
+    H.write($('#note'), H.anim('note', t, 5.6, 0.75, 'ink', { kind: 'write' })); H.boil($('#note'), t, 3);
+    H.draw(S.arrow[0], H.anim('arrow', t, 6.0, 0.45, 'ink', { kind: 'draw' }));
+    H.draw(S.arrow[1], H.anim('head1', t, 6.43, 0.12, 'linear'));
+    H.draw(S.arrow[2], H.anim('head2', t, 6.53, 0.1, 'linear'));
+    S.arrow.forEach((s) => H.boil(s, t));
+
+    /* payoff: LISTED stamp */
+    const sp = H.springAnim('stamp', t, 6.9, { k: 520, c: 24 }, { kind: 'stamp' });
+    const stamp = $('#stamp');
+    stamp.style.opacity = t < 6.9 ? 0 : H.clamp((t - 6.9) / 0.06) * 0.9;
+    stamp.style.transform = `scale(${H.lerp(2.3, 1, sp)}) rotate(${H.lerp(-18, -8, sp)}deg)`;
+    stamp.style.webkitMaskPosition = `${H.drawing(t, 2, 3) * 3}px 0`;
+    if (t >= 6.9) H.misreg(stamp, t, { color: 'rgba(17,24,39,.16)', amt: 0.14 });
+
+    /* D — page pulled away to the end card */
+    const pg = H.anim('page', t, 9.3, 0.75, 'glide', { kind: 'transition', from: 'left' });
+    $('#sheet1').style.transform = `translateX(${-pg * 112}%) rotate(${-pg * 4}deg)`;
+    $('#sheet1').style.boxShadow = pg > 0 ? `${u * 1.5}px 0 ${u * 4}px rgba(0,0,0,${0.45 * Math.sin(pg * Math.PI) + 0.1})` : 'none';
+    H.typeIn('tag', $('.tag'), t, 9.85, { stagger: 0.026, dy: 0.3, rot: 4 });
+    H.draw(S.under, H.anim('under', t, 10.6, 0.4, 'ink', { kind: 'draw' })); H.boil(S.under, t);
+  },
+});
+</script>
+</body>
+</html>

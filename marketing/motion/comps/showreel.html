@@ -1,0 +1,348 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Project Market — showreel spot</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=IBM+Plex+Mono:wght@400;500&family=Nanum+Pen+Script&display=block">
+<style>
+  :root {
+    --paper: #F1F0F5; --paper-2: #FBFBFE; --lav: #ECEAFB; --ink: #111827; --ink-soft: #5B6070;
+    --indigo: #4F46E5; --indigo-2: #A5B4FC; --red: #C8412A; --skel: #DDDBE6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: var(--W); height: var(--H); overflow: hidden; background: var(--ink); }
+  body { font-kerning: normal; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; background: var(--ink); }
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  #world { position: absolute; inset: 0; z-index: 1; }
+  .sheet { position: absolute; top: 0; left: 0; width: var(--W); height: var(--H); }
+  .sheet::before { content: ''; position: absolute; inset: calc(var(--u) * -4); background: inherit; z-index: -1; }
+  #s1 { background: var(--paper); }
+  #s2 { background: var(--indigo); left: calc(var(--W) + var(--u) * 10); color: var(--paper-2); }
+  #s4 { background: var(--ink); color: var(--paper); z-index: 2; visibility: hidden; }
+  #s3 { background: var(--paper); z-index: 3; transform-origin: 50% 100%; }
+  svg.ink { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 5; }
+  svg.ink path { fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+
+  .display { font-family: 'Bricolage Grotesque', sans-serif; font-variation-settings: 'opsz' 96; font-weight: 740; letter-spacing: -0.04em; line-height: 0.93; }
+  .line { display: block; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-feature-settings: 'zero' 1; }
+  .hand { font-family: 'Nanum Pen Script', cursive; line-height: 1; white-space: nowrap; }
+  .k { font-size: calc(var(--u) * 2.3); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); }
+
+  /* S1 — hook */
+  #hook { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 28); font-size: calc(var(--u) * 15.5); color: var(--ink); }
+  .skel { position: absolute; left: 0; top: 0; width: calc(var(--u) * 30); height: calc(var(--u) * 17); background: var(--paper-2);
+    border: 1px solid rgba(17,24,39,.12); border-radius: calc(var(--u) * .9); padding: calc(var(--u) * 2.2); opacity: 0; }
+  .skel i { display: block; height: calc(var(--u) * 1.5); border-radius: 99px; background: var(--skel); margin-bottom: calc(var(--u) * 1.4); }
+  .skel i:first-child { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); border-radius: calc(var(--u) * 1.2); display: inline-block; margin-right: calc(var(--u) * 1.6); vertical-align: middle; }
+  .skel b { display: inline-block; vertical-align: middle; width: 55%; height: calc(var(--u) * 2.2); border-radius: 99px; background: #C9C6D6; }
+
+  /* S2 — turn */
+  #give { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 27); font-size: calc(var(--u) * 15.5); color: var(--paper-2); }
+  #s2tag { position: absolute; left: calc(var(--u) * 9.4); top: calc(var(--u) * 18); color: var(--indigo-2); font-size: calc(var(--u) * 2.4); letter-spacing: .16em; }
+
+  /* S3 — product */
+  #s3label { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 15); }
+  #paste { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 20); font-size: calc(var(--u) * 10); color: var(--ink); }
+  #field { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 37); width: calc(var(--u) * 86); height: calc(var(--u) * 9.4);
+    background: var(--paper-2); border: calc(var(--u) * .25) solid var(--ink); border-radius: calc(var(--u) * 1.2); display: flex; align-items: center; padding-left: calc(var(--u) * 2); }
+  #fav { width: calc(var(--u) * 4.4); height: calc(var(--u) * 4.4); position: relative; flex: none; }
+  #fav svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #ftext { font-size: calc(var(--u) * 3.3); margin-left: calc(var(--u) * 1.8); color: var(--ink); white-space: nowrap; }
+  #caret { display: inline-block; width: calc(var(--u) * .3); height: calc(var(--u) * 3.6); background: var(--indigo); margin-left: calc(var(--u) * .3); vertical-align: middle; }
+  #btn { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 49.5); font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
+    font-size: calc(var(--u) * 3.4); padding: calc(var(--u) * 1.4) calc(var(--u) * 3.2); border-radius: 99px; background: var(--ink); color: var(--paper-2); }
+  #note { position: absolute; left: calc(var(--u) * 10); top: calc(var(--u) * 68); font-size: calc(var(--u) * 7); color: var(--indigo); }
+
+  .card { position: absolute; right: calc(var(--u) * 9); top: calc(var(--u) * 20); width: calc(var(--u) * 68);
+    background: var(--paper-2); border: 1px solid rgba(17,24,39,.12); border-radius: calc(var(--u) * 1);
+    padding: calc(var(--u) * 3.4) calc(var(--u) * 3.8) calc(var(--u) * 3.6); color: var(--ink); opacity: 0; }
+  .card .row { display: flex; justify-content: space-between; align-items: center; }
+  .k.on { color: var(--paper-2); background: var(--ink); border-radius: 99px; padding: calc(var(--u) * .5) calc(var(--u) * 1.6); letter-spacing: .08em; }
+  .inner { background: var(--lav); border: 1px solid #DCD9F5; border-radius: calc(var(--u) * .8); padding: calc(var(--u) * 3) calc(var(--u) * 3.2); margin-top: calc(var(--u) * 2.8); }
+  .proj { display: flex; align-items: center; gap: calc(var(--u) * 2.2); }
+  #slot { width: calc(var(--u) * 8.6); height: calc(var(--u) * 8.6); flex: none; border: calc(var(--u) * .25) dashed #B9B4E6; border-radius: calc(var(--u) * 1.9); position: relative; }
+  #slot svg { position: absolute; inset: calc(var(--u) * -.25); width: calc(100% + var(--u) * .5); height: calc(100% + var(--u) * .5); opacity: 0; }
+  .pname { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: calc(var(--u) * 6); letter-spacing: -.03em; }
+  .pdesc { font-family: 'Bricolage Grotesque', sans-serif; font-size: calc(var(--u) * 3.3); color: var(--ink-soft); margin-top: calc(var(--u) * 2.4); }
+  .purl { font-size: calc(var(--u) * 2.3); color: var(--indigo); margin-top: calc(var(--u) * 1.4); }
+  .foot { margin-top: calc(var(--u) * 2.6); }
+  .new { font-size: calc(var(--u) * 2.4); color: var(--indigo); border: 1.5px solid currentColor; border-radius: 99px; padding: calc(var(--u) * .4) calc(var(--u) * 1.5); }
+  .stamp { position: absolute; right: calc(var(--u) * 12); bottom: calc(var(--u) * 1.4); font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
+    font-size: calc(var(--u) * 7.4); letter-spacing: .06em; color: var(--indigo); border: calc(var(--u) * .55) solid var(--indigo); border-radius: calc(var(--u) * 1.2);
+    padding: calc(var(--u) * .1) calc(var(--u) * 1.8) 0; mix-blend-mode: multiply; opacity: 0; -webkit-mask-size: calc(var(--u) * 24); }
+  #fly { position: absolute; left: 0; top: 0; width: calc(var(--u) * 8.6); height: calc(var(--u) * 8.6); z-index: 6; opacity: 0; transform-origin: 0 0; }
+
+  /* S4 — sign-off */
+  .end { position: absolute; left: calc(var(--u) * 9); top: calc(var(--u) * 24); }
+  .brand { display: flex; align-items: center; gap: calc(var(--u) * 3.4); }
+  #mark { width: calc(var(--u) * 15); height: calc(var(--u) * 15); flex: none; overflow: visible; }
+  #mark .pc { transform-box: fill-box; transform-origin: 50% 100%; }
+  #mbg { transform-box: fill-box; transform-origin: 50% 50%; }
+  .wordmark { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 760; font-variation-settings: 'opsz' 96; font-size: calc(var(--u) * 13); letter-spacing: -.045em; line-height: 1; }
+  .tag { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 340; font-size: calc(var(--u) * 6.6); letter-spacing: -.02em; margin-top: calc(var(--u) * 4.4); opacity: .92; }
+  .url { font-size: calc(var(--u) * 3.7); margin-top: calc(var(--u) * 6.5); display: inline-block; color: #C7D2FE; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="mb" x="-10%" y="0%" width="120%" height="100%"><feGaussianBlur id="mbBlur" stdDeviation="0 0"/></filter>
+</defs></svg>
+<div id="stage">
+  <div id="cam">
+    <div id="world">
+      <div class="sheet" id="s1">
+        <h1 class="display" id="hook" data-text="hook"><span class="line">Great projects</span><span class="line">get <span id="buried">buried.</span></span></h1>
+        <div id="pile"></div>
+      </div>
+      <div class="sheet" id="s2">
+        <div class="mono" id="s2tag">PROJECT MARKET</div>
+        <h1 class="display" id="give" data-text="give"><span class="line">Give yours</span><span class="line">a <span id="stageword">stage.</span></span></h1>
+        <svg class="ink" id="inkS2"></svg>
+      </div>
+    </div>
+
+    <div class="sheet" id="s4">
+      <div class="end">
+        <div class="brand">
+          <svg id="mark" viewBox="0 0 32 32">
+            <rect id="mbg" width="32" height="32" rx="7" fill="#4f46e5"/>
+            <g transform="translate(16 16) scale(0.78) translate(-16 -16)" fill="#fff">
+              <path class="pc" id="bar1" d="M1.5 20.5h4V29h-4z"/>
+              <path class="pc" id="bar2" d="M7 14h4v15H7z"/>
+              <path class="pc" id="pp" fill-rule="evenodd" d="M12.5 3H22C27.5 3 30.5 6 30.5 11.5C30.5 17 27.5 20 22 20H19V29H12.5zM19 7.8V15.2H22C24.4 15.2 25.8 13.9 25.8 11.5C25.8 9.1 24.4 7.8 22 7.8z"/>
+            </g>
+          </svg>
+          <div class="wordmark" id="wm" data-text="wordmark">Project Market</div>
+        </div>
+        <div class="tag" id="tag" data-text="tagline">Launch it. Get found.</div>
+        <div class="url mono" id="url" data-text="url">project-market-app.netlify.app</div>
+      </div>
+      <svg class="ink" id="inkEnd"></svg>
+    </div>
+
+    <div class="sheet" id="s3">
+      <div class="mono k" id="s3label">Submit a project</div>
+      <h2 class="display" id="paste" data-text="paste">Paste a link.</h2>
+      <div id="field">
+        <div id="fav">
+          <svg id="globe" viewBox="0 0 24 24" fill="none" stroke="#5B6070" stroke-width="1.6"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19"/></svg>
+          <svg id="favlogo" viewBox="0 0 40 40" style="opacity:0"><use href="#ucLogo"/></svg>
+        </div>
+        <span class="mono" id="ftext" data-text="field"></span><span id="caret"></span>
+      </div>
+      <div id="btn">＋ Submit</div>
+      <div class="hand" id="note" data-text="note">logo grabbed for you</div>
+
+      <div class="card" id="card">
+        <div class="row mono"><span class="k">Market index</span><span class="k on">This week</span></div>
+        <div class="inner">
+          <div class="proj">
+            <div id="slot"><svg viewBox="0 0 40 40" id="slotlogo"><use href="#ucLogo"/></svg></div>
+            <div class="pname" id="pname">upcurrent</div>
+          </div>
+          <div class="pdesc" id="pdesc">I track AI so you don't have to.</div>
+          <div class="purl mono" id="purl">anmolsrivastavadev-pixel.github.io ↗</div>
+        </div>
+        <div class="row foot mono"><span class="k">1 project listed</span><span class="new">New</span></div>
+        <div class="stamp" id="stamp">LISTED</div>
+      </div>
+
+      <svg id="fly" viewBox="0 0 40 40">
+        <g id="ucLogo"><rect width="40" height="40" rx="9" fill="#1A1C22"/>
+          <path d="M10 27c3-1 5-4 5-8" stroke="#2BA59E" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+          <path d="M17 29c4-2 7-7 6-14" stroke="#F2B632" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+          <path d="M24 30c5-3 8-10 6-19" stroke="#E8572A" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>
+      </svg>
+      <svg class="ink" id="inkS3"></svg>
+    </div>
+  </div>
+</div>
+<script src="../runtime/hand.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const u = H.u, S = {};
+const URL_TEXT = 'anmolsrivastavadev-pixel.github.io';
+const whip = H.bezier(0.75, 0, 0.18, 1); whip.id = 'whip';
+const fling = H.bezier(0.45, 0, 0.12, 1); fling.id = 'fling';
+
+function inkMask(seed) {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const x = c.getContext('2d'), r = H.rng(seed);
+  x.fillStyle = '#000'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(0,0,0,${r() * 0.9})`; x.clearRect(r() * 256, r() * 256, 1 + r() * 2.5, 1 + r() * 2.5); }
+  for (let i = 0; i < 14; i++) { x.globalAlpha = 0.5; x.clearRect(r() * 256, r() * 256, 8 + r() * 30, 1 + r() * 2); }
+  return c.toDataURL();
+}
+
+// skeleton cards that pile onto "buried." — each: landing offset from the word, tilt, start time
+const PILE = [
+  { dx: 0.0, dy: 0.42, rot: -7, at: 0.62 },
+  { dx: 0.42, dy: 0.5, rot: 5, at: 0.83 },
+  { dx: 0.14, dy: 0.7, rot: -3, at: 1.0 },
+  { dx: 0.6, dy: 0.3, rot: 9, at: 1.2 },
+  { dx: 0.26, dy: 0.36, rot: -1.5, at: 1.36 },
+];
+
+H.compose({
+  duration: 15,
+  grain: 60, grainOpacity: 0.5, paperOpacity: 0.45,
+  setup() {
+    const st = $('#stage').getBoundingClientRect();
+    const rel = (el) => { const r = el.getBoundingClientRect(); return { x: r.x - st.x, y: r.y - st.y, w: r.width, h: r.height }; };
+    const mk = (svg, d, color, width) => { const p = H.svg('path', { d, 'stroke-width': width * u, filter: 'url(#ink)' }, $(svg)); p.style.stroke = color; return p; };
+
+    // S1 pile
+    const b = rel($('#buried'));
+    S.skels = PILE.map((p, i) => {
+      const el = document.createElement('div'); el.className = 'skel';
+      el.innerHTML = '<i></i><b></b><i style="width:92%"></i><i style="width:64%"></i>';
+      $('#pile').appendChild(el);
+      return { el, x: b.x + b.w * p.dx - u * 4, y: b.y + b.h * p.dy - u * 1, ...p };
+    });
+
+    // S2 underline (sheet is offset by W inside the world)
+    const sw = rel($('#stageword'));
+    S.under2 = mk('#inkS2', H.line([sw.x - H.W - 10 * u - u * 0.8, sw.y + sw.h + u * 0.4], [sw.x - H.W - 10 * u + sw.w + u * 2.2, sw.y + sw.h - u * 0.6], { seed: 'st', bow: 0.9 }), 'var(--paper-2)', 0.8);
+    S.under2b = mk('#inkS2', H.line([sw.x - H.W - 10 * u + u * 1.5, sw.y + sw.h + u * 2.1], [sw.x - H.W - 10 * u + sw.w - u * 1.5, sw.y + sw.h + u * 1.5], { seed: 'st2', bow: 0.5 }), 'var(--paper-2)', 0.55);
+
+    // S3: measure the card at its resting pose so the flying logo lands in the slot
+    const card = $('#card');
+    card.style.transform = 'rotate(-1.2deg)';
+    const slot = rel($('#slot')), fav = rel($('#fav'));
+    card.style.transform = '';
+    S.flyFrom = [fav.x, fav.y, fav.w / slot.w];
+    S.flyTo = [slot.x, slot.y];
+    const note = rel($('#note'));
+    const a = H.arrow([note.x + note.w + u * 2, note.y + note.h * 0.35], [slot.x - u * 1.5, slot.y + slot.h + u * 1.5], { seed: 'n3', bend: 0.24 });
+    S.arrow = [mk('#inkS3', a.shaft, 'var(--indigo)', 0.5), mk('#inkS3', a.head1, 'var(--indigo)', 0.5), mk('#inkS3', a.head2, 'var(--indigo)', 0.5)];
+    $('#stamp').style.webkitMaskImage = `url(${inkMask('stamp')})`;
+
+    // S4
+    $('#s4').style.visibility = 'visible';
+    const url = rel($('#url'));
+    S.under4 = mk('#inkEnd', H.line([url.x - u * 0.6, url.y + url.h + u * 0.9], [url.x + url.w + u * 1.4, url.y + url.h + u * 0.4], { seed: 'u4', bow: 0.4 }), 'var(--indigo-2)', 0.55);
+    $('#s4').style.visibility = '';
+
+    H.split($('#give')); H.split($('#paste')); H.split($('#wm')); H.split($('#tag'));
+  },
+
+  scene(t) {
+    /* ---------- camera ---------- */
+    const hit = H.impact(t, 8.62, { amp: 0.6 });
+    const push = H.lerp(1, 1.03, H.anim('push3', t, 4.8, 5, 'glide', { kind: 'camera' }));
+    const settle = H.lerp(1.04, 1, H.anim('pull4', t, 9.9, 4, 'glide', { kind: 'camera' }));
+    $('#cam').style.transform = `${H.handheld(t)} translate(${hit.x}px,${hit.y}px) scale(${t < 9.9 ? push : settle})`;
+
+    /* ---------- S1: the hook, then the pile buries it ---------- */
+    S.skels.forEach((s, i) => {
+      const p = H.springAnim('skel' + i, t, s.at, { k: 300, c: 20 }, { kind: 'drop', from: i % 2 ? 'top-right' : 'top-left' });
+      const air = H.clamp(1 - p, 0, 1);
+      s.el.style.opacity = t < s.at ? 0 : 1;
+      s.el.style.transform = `translate(${s.x + air * (i % 2 ? 14 : -10) * u}px, ${s.y - air * 70 * u}px) rotate(${s.rot + air * (i % 2 ? 14 : -12)}deg)`;
+      s.el.style.boxShadow = `0 ${u * (0.4 + air * 4)}px ${u * (0.8 + air * 7)}px rgba(17,24,39,${0.1 + air * 0.06})`;
+    });
+
+    /* ---------- whip pan S1 → S2 with horizontal motion blur ---------- */
+    const wp = H.anim('whip', t, 2.15, 0.42, whip, { kind: 'transition', from: 'right' });
+    const wNext = whip(H.prog(t + 1 / H.fps, 2.15, 0.42));
+    const vel = (wNext - wp) * (H.W + 10 * u);
+    $('#world').style.transform = `translateX(${-wp * (H.W + 10 * u)}px)`;
+    $('#mbBlur').setAttribute('stdDeviation', `${Math.min(70, vel * 0.32).toFixed(1)} 0`);
+    $('#world').style.filter = vel > 1 ? 'url(#mb)' : 'none';
+
+    /* ---------- S2: the turn ---------- */
+    H.typeIn('give', $('#give'), t, 2.5, { stagger: 0.03, rot: 9 });
+    H.draw(S.under2, H.anim('under2', t, 3.25, 0.32, 'ink', { kind: 'draw' }));
+    H.draw(S.under2b, H.anim('under2b', t, 3.5, 0.24, 'ink', { kind: 'draw' }));
+    H.boil(S.under2, t); H.boil(S.under2b, t);
+    $('#s2tag').style.opacity = H.anim('s2tag', t, 2.62, 0.3, 'lazy');
+
+    /* ---------- S3 slides up like a sheet of paper ---------- */
+    const s3 = H.springAnim('s3in', t, 4.8, { k: 140, c: 17 }, { kind: 'enter', from: 'bottom' });
+    const drop = H.anim('s3out', t, 9.85, 0.55, 'exit', { kind: 'exit', from: 'down' });
+    const s3el = $('#s3');
+    s3el.style.visibility = t < 4.8 ? 'hidden' : 'visible';
+    s3el.style.transform = `translateY(${((1 - s3) * 105 + drop * 115).toFixed(2)}%) rotate(${((1 - s3) * 3 + drop * 7).toFixed(2)}deg)`;
+    s3el.style.boxShadow = `0 ${-u * 2}px ${u * 6}px rgba(0,0,0,${t < 4.8 ? 0 : 0.35 * H.clamp(1 - s3 + drop)})`;
+    H.typeIn('paste', $('#paste'), t, 5.12, { stagger: 0.026, rot: 6 });
+
+    // typing the URL
+    const n = Math.round(H.anim('typing', t, 5.45, 0.78, 'linear', { kind: 'type' }) * URL_TEXT.length);
+    $('#ftext').textContent = URL_TEXT.slice(0, n);
+    $('#caret').style.opacity = t < 6.4 && (t < 5.45 || t > 6.23 ? Math.floor(t * 2.4) % 2 === 0 : true) ? 1 : 0;
+
+    // Submit press
+    const pr = H.anim('press', t, 6.36, 0.16, 'linear', { kind: 'press' });
+    const btn = $('#btn');
+    btn.style.transform = `scale(${1 - 0.08 * Math.sin(Math.PI * pr)})`;
+    btn.style.background = t >= 6.44 ? 'var(--indigo)' : 'var(--ink)';
+
+    // favicon fetched in the field
+    const fp = H.springAnim('fav', t, 6.5, { k: 380, c: 18 }, { kind: 'enter', from: 'center' });
+    $('#globe').style.opacity = t < 6.5 ? 1 : 0;
+    $('#favlogo').style.opacity = t < 6.5 ? 0 : 1;
+    $('#favlogo').style.transform = `scale(${H.lerp(0.4, 1, fp)})`;
+
+    // card lands
+    const cp = H.springAnim('card', t, 6.56, { k: 190, c: 16 }, { kind: 'enter', from: 'below' });
+    const card = $('#card');
+    card.style.opacity = H.clamp((t - 6.56) / 0.08);
+    card.style.transform = `translateY(${(1 - cp) * 9 * u}px) scale(${H.lerp(0.9, 1, cp)}) rotate(${H.lerp(3.5, -1.2, cp)}deg)`;
+    const air = H.clamp(1 - cp, 0, 1);
+    card.style.boxShadow = `0 ${u * (0.4 + air * 3)}px ${u * (0.8 + air * 6)}px rgba(17,24,39,${0.09 + air * 0.08}), 0 ${u * (2 + air * 5)}px ${u * (6 + air * 8)}px rgba(17,24,39,0.07)`;
+    $('#pname').style.opacity = H.anim('pname', t, 6.86, 0.2, 'snap');
+    const dp = H.anim('pdesc', t, 6.96, 0.4, 'lazy', { kind: 'enter', from: 'left' });
+    $('#pdesc').style.opacity = dp; $('#pdesc').style.transform = `translateX(${(1 - dp) * -2 * u}px)`;
+    $('#purl').style.opacity = H.anim('purl', t, 7.08, 0.35, 'lazy');
+
+    // the logo flies from the field into the card's slot along an arc
+    const fl = H.anim('fly', t, 6.68, 0.58, fling, { kind: 'move', from: 'left' });
+    const [x0, y0, s0] = S.flyFrom, [x1, y1] = S.flyTo;
+    const cx = (x0 + x1) / 2, cy = Math.min(y0, y1) - 22 * u, q = 1 - fl;
+    const fx = q * q * x0 + 2 * q * fl * cx + fl * fl * x1, fy = q * q * y0 + 2 * q * fl * cy + fl * fl * y1;
+    const land = H.springAnim('land', t, 7.26, { k: 420, c: 16 }, { kind: 'land' });
+    const fly = $('#fly');
+    fly.style.opacity = t >= 6.68 && t < 7.26 ? 1 : 0;
+    fly.style.transform = `translate(${fx}px,${fy}px) scale(${H.lerp(s0, 1, fl) * (1 + Math.sin(Math.PI * fl) * 0.35)}) rotate(${Math.sin(Math.PI * fl) * -14}deg)`;
+    const sl = $('#slotlogo');
+    sl.style.opacity = t >= 7.26 ? 1 : 0;
+    sl.style.transform = `scale(${t >= 7.26 ? 1 + (1 - land) * 0.18 : 1})`;
+    $('#slot').style.borderColor = t >= 7.26 ? 'transparent' : '#B9B4E6';
+
+    // margin note + arrow
+    H.write($('#note'), H.anim('note', t, 7.4, 0.7, 'ink', { kind: 'write' })); H.boil($('#note'), t, 3);
+    H.draw(S.arrow[0], H.anim('arrow', t, 7.78, 0.42, 'ink', { kind: 'draw' }));
+    H.draw(S.arrow[1], H.anim('head1', t, 8.18, 0.1, 'linear'));
+    H.draw(S.arrow[2], H.anim('head2', t, 8.26, 0.09, 'linear'));
+    S.arrow.forEach((s) => H.boil(s, t));
+
+    // payoff: LISTED
+    const sp = H.springAnim('stamp', t, 8.42, { k: 520, c: 24 }, { kind: 'stamp' });
+    const stamp = $('#stamp');
+    stamp.style.opacity = t < 8.42 ? 0 : H.clamp((t - 8.42) / 0.06) * 0.9;
+    stamp.style.transform = `scale(${H.lerp(2.4, 1, sp)}) rotate(${H.lerp(-20, -8, sp)}deg)`;
+    stamp.style.webkitMaskPosition = `${H.drawing(t, 2, 3) * 3}px 0`;
+    if (t >= 8.42) H.misreg(stamp, t, { color: 'rgba(17,24,39,.16)', amt: 0.14 });
+
+    /* ---------- S4: the mark builds itself ---------- */
+    $('#s4').style.visibility = t >= 9.8 ? 'visible' : 'hidden';
+    const bg = H.springAnim('mbg', t, 10.0, { k: 260, c: 15 }, { kind: 'enter', from: 'center' });
+    $('#mbg').style.transform = `scale(${H.clamp(bg, 0, 2)}) rotate(${H.lerp(-25, 0, H.clamp(bg))}deg)`;
+    const b1 = H.springAnim('bar1', t, 10.2, { k: 330, c: 14 }, { kind: 'grow', from: 'bottom' });
+    const b2 = H.springAnim('bar2', t, 10.3, { k: 330, c: 14 }, { kind: 'grow', from: 'bottom' });
+    $('#bar1').style.transform = `scaleY(${Math.max(0.001, b1)})`;
+    $('#bar2').style.transform = `scaleY(${Math.max(0.001, b2)})`;
+    const pp = H.springAnim('pdrop', t, 10.42, { k: 280, c: 15 }, { kind: 'drop', from: 'top' });
+    $('#pp').style.transform = `translateY(${(1 - pp) * -34}px)`;
+    $('#pp').style.opacity = t < 10.42 ? 0 : 1;
+    H.typeIn('wm', $('#wm'), t, 10.6, { stagger: 0.03, rot: 8 });
+    H.typeIn('tag', $('#tag'), t, 11.35, { stagger: 0.024, dy: 0.3, rot: 4 });
+    H.write($('#url'), H.anim('url', t, 11.95, 0.5, 'glide', { kind: 'reveal', from: 'left' }));
+    H.draw(S.under4, H.anim('under4', t, 12.5, 0.38, 'ink', { kind: 'draw' })); H.boil(S.under4, t);
+  },
+});
+</script>
+</body>
+</html>

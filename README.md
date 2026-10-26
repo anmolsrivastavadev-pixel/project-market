@@ -2,14 +2,14 @@
 
 A clean market for launching and discovering projects — submit a project, get a card with its website logo, and appear in the weekly rankings.
 
-**Live:** https://project-market.anmol-srivastava-dev.workers.dev
+**Live:** https://project-market-app.netlify.app
 
 ![Project Market](marketing/product-market.png)
 
 ## Features
 
 - Launch video on the homepage
-- Persistent project submissions (Cloudflare Workers KV, free tier)
+- Persistent project submissions (Netlify Blobs; Cloudflare KV adapter also included)
 - Automatic project logos pulled from each project's website
 - Market index card view and weekly ranking table
 - Static pages: About, Methods, Badge, Privacy
@@ -18,20 +18,32 @@ A clean market for launching and discovering projects — submit a project, get 
 
 ```
 public/           static site (HTML, CSS, JS, fonts, images, media)
-worker/index.js   Cloudflare Worker entry: /api/* routes, KV storage, video range requests
-worker/api.js     API handlers for project submissions and logos
-wrangler.toml     Cloudflare deploy config
+worker/api.js            API handlers for project submissions and logos (platform-agnostic)
+netlify/functions/api.mjs Netlify Function: /api/* on Netlify Blobs
+netlify.toml             Netlify deploy config
+worker/index.js          Cloudflare Worker alternative: /api/* on KV, video range requests
+wrangler.toml            Cloudflare deploy config
 marketing/       launch video and product screenshot
 ```
 
 ## Deploy
+
+Netlify (primary):
+
+```bash
+npm install
+npx netlify-cli login
+npx netlify-cli deploy --prod --dir public --functions netlify/functions
+```
+
+Cloudflare (alternative):
 
 ```bash
 npx wrangler login
 npx wrangler deploy
 ```
 
-Runs entirely on Cloudflare's free plan (Workers + static assets + KV); no payment method needed.
+Both run on free plans with no payment method needed.
 
 ## Marketing
 
